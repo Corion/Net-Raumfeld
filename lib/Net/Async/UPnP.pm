@@ -592,11 +592,12 @@ sub postaction( $self, $action_name, $args ) {
     my $soap = $self->_soap_xml($action_name, $args);
     my $ua = $self->device->ua;
     my $type = $self->type;
+    my $action = "$type#$action_name",;
 
     $ua->do_request(
         uri => $loc,
         headers => {
-            SOAPACTION => "$type#$action_name",
+            SOAPACTION => $action,
         },
         content_type => 'text/xml; charset="utf-8"',
         content => $soap,
@@ -617,7 +618,7 @@ sub postaction( $self, $action_name, $args ) {
             }
             Future->done( \%results )
         } else {
-            warn $res->code;
+            warn $res->code . " for $action";
             Future->fail( error => $res->code, $res->decoded_content )
         }
     });

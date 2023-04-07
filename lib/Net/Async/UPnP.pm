@@ -228,7 +228,7 @@ sub on_event( $self, $req ) {
         my $p = XML::LibXML->load_xml( string => $payload );
         my %instance;
 
-        for my $instance ( $self->xpc->findnodes( '//meta:InstanceID', $p )) {
+        for my $instance ( $self->xpc->findnodes( './/meta:InstanceID', $p )) {
             $instance{ InstanceID } = $instance->getAttribute('val');
 
             for my $change ($self->xpc->findnodes( './/*', $instance )) {
@@ -243,8 +243,8 @@ sub on_event( $self, $req ) {
 
         push @res, \%instance;
 
-    } elsif( $self->xpc->findnodes('//ev:property', $d)->size ) {
-        my $prop = $self->xpc->findnodes('//ev:property', $d);
+    } elsif( $self->xpc->findnodes('.//ev:property', $d)->size ) {
+        my $prop = $self->xpc->findnodes('.//ev:property', $d);
         for my $props ($prop->get_nodelist) {
             warn $props->toString;
             $props = $props->toString;
@@ -448,7 +448,7 @@ has 'xpc' => (
 );
 
 sub get_attribute( $self, $attr ) {
-    my @res = $self->xpc->findnodes( "//dev:$attr", $self->description )->get_nodelist;
+    my @res = $self->xpc->findnodes( ".//dev:$attr", $self->description )->get_nodelist;
 
     if( @res ) {
         return $res[0]->textContent
@@ -458,11 +458,12 @@ sub get_attribute( $self, $attr ) {
 }
 
 sub _parse_services( $self, $description = $self->description ) {
-    my @services = $self->xpc->findnodes( '//dev:serviceList/dev:service', $self->description );
+    my @services = $self->xpc->findnodes( './/dev:serviceList/dev:service', $self->description );
     @services = map {
+        my $d = $_;
         Net::Async::UPnP::Service->new(
             device       => $self,
-            description  => $_,
+            description  => $d,
             controlpoint => $self->controlpoint,
         );
     } @services;
@@ -530,7 +531,7 @@ has 'id' => (
 );
 
 sub get_attribute( $self, $attr ) {
-    my @res = $self->xpc->findnodes( "//dev:$attr", $self->description )->get_nodelist;
+    my @res = $self->xpc->findnodes( ".//dev:$attr", $self->description )->get_nodelist;
 
     if( @res ) {
         return $res[0]->textContent

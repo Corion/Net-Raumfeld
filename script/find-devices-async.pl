@@ -13,7 +13,11 @@ my $search = Net::Async::UPnP::ControlPoint->new();
 
 $search->on( device => sub( $search, $dev ) {
     #say $dev->description;
-    say sprintf '%s (%s) at %s', $dev->friendlyname, $dev->devicetype, $dev->location;
+    say sprintf '%s (%s) at %s  UDN: %s', $dev->friendlyname, $dev->devicetype, $dev->location, $dev->udn;
+
+    for my $s ($dev->services->@*) {
+        say "+ " . sprintf '%s at %s', $s->type, $s->controlurl;
+    };
 
     use Data::Dumper;
     my $s = $dev->service_by_name('urn:schemas-upnp-org:service:RenderingControl:1');

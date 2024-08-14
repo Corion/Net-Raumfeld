@@ -1,0 +1,79 @@
+#!perl
+use 5.020;
+use experimental 'signatures';
+
+use lib '../Net-Async-UPnP/lib';
+use Net::Async::UPnP;
+use Net::Async::UPnP::ControlPoint;
+use IO::Async::Loop;
+use Future;
+
+use Try::Tiny;
+
+use Getopt::Long;
+use Pod::Usage;
+
+GetOptions(
+    'u|udn=s' => \my $udn,
+) or pod2usage(2);
+
+my $loop = IO::Async::Loop->new;
+my $search = Net::Async::UPnP::ControlPoint->new();
+
+my $on_device = Future->new();
+
+if( ! $udn ) {
+    # We want to search and use the first available
+};
+
+my ($command, @args) = @ARGV;
+
+$on_device->then(sub($dev) {
+    my $s = $dev->service_by_name('urn:schemas-upnp-org:service:AVTransport:1');
+    if( $s ) {
+        #say "Subscribing to eventual answers";
+        #$s->subscribe( sub($dev, $evt) {
+        #    use Data::Dumper;
+        #    warn Dumper $evt;
+        #})->retain;
+
+        my $action;
+        if( $command eq 'standby' ) {
+            $action = $s->postaction( "EnterManualStandby", { InstanceID => 0 })->then(sub($res) {
+                # No action necessary
+            });
+        } elsif( $command eq 'wakeup' ) {
+            $action = $s->postaction( "LeaveStandby", { InstanceID => 0 })->then(sub($res) {
+                # No action necessary
+            });
+        };
+
+        if( $action ) {
+            $action->then( sub {
+                # Our work here is done
+                $loop->stop
+            })->retain;
+        };
+    };
+})->retain;
+
+$search->on( device => sub( $search, $dev ) {
+    #say $dev->description;
+
+    if(     $udn
+        and $dev->udn
+        and $dev->udn eq $udn ) {
+        $on_device->done( $dev );
+    } elsif(     ! $udn
+             and $dev->devicetype eq 'urn:schemas-upnp-org:device:MediaRenderer:1') {
+        say sprintf 'Found %s (%s) at %s  UDN: %s', $dev->friendlyname, $dev->devicetype, $dev->location, $dev->udn;
+        $on_device->done( $dev );
+    } else {
+        say sprintf 'Ignoring %s (%s) at %s  UDN: %s', $dev->friendlyname, $dev->devicetype, $dev->location, $dev->udn;
+    }
+});
+
+$search->start_search(
+    loop => $loop,
+);
+$loop->run;

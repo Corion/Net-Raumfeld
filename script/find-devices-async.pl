@@ -2,6 +2,8 @@
 use 5.020;
 use feature 'signatures';
 no warnings 'experimental::signatures';
+
+use lib '../Net-Async-UPnP/lib';
 use Net::Async::UPnP;
 use Net::Async::UPnP::ControlPoint;
 use IO::Async::Loop;
@@ -63,9 +65,9 @@ $search->on( device => sub( $search, $dev ) {
         #$s->postaction( "EnterManualStandby", { InstanceID => 0 })->then(sub($res) {
         #    say Dumper( $res );
         #})->retain;
-        #$s->postaction( "LeaveStandby", { InstanceID => 0 })->then(sub($res) {
-        #    say Dumper( $res );
-        #})->retain;
+        $s->postaction( "LeaveStandby", { InstanceID => 0 })->then(sub($res) {
+            say Dumper( $res );
+        })->retain;
 
 if(0) {
         #my $playlist = 'http://ice3.somafm.com:80/groovesalad-64-aac';
